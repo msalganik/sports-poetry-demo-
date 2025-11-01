@@ -22,20 +22,50 @@ This demo showcases how to build agentic workflows with:
 
 ## Quick Start
 
-### Step 1: Provide Sports to Claude
+### Step 1: Create Configuration
+
+You can create `config.json` in **two ways**:
+
+#### Option A: Interactive with Claude (Recommended for First-Time Users)
 
 Just chat with Claude Code:
 
 ```
 You: Let's run the demo! I want poems about basketball, soccer, and tennis.
 
-Claude: Great! I'll validate that and create the config file...
+Claude: Great! I'll create the config file...
+       [Uses config_manager skill to collect all parameters]
+       ✓ Created config.json
 ```
 
-Claude will:
-- Validate you have 3-5 sports
-- Confirm the list with you
-- Write `config.json`
+The Claude skill will:
+- Ask for 3-5 sports (or interpret categories like "winter sports")
+- Choose generation mode (template or LLM)
+- Configure LLM settings if needed
+- Validate API keys
+- Auto-generate session ID and timestamp
+
+#### Option B: Python API (For Scripts & Automation)
+
+Use the `config_builder.py` module:
+
+```python
+from config_builder import ConfigBuilder
+
+# Template mode (fast, deterministic)
+ConfigBuilder() \
+    .with_sports(['basketball', 'soccer', 'tennis']) \
+    .save('config.json')
+
+# LLM mode (creative, requires API key)
+ConfigBuilder() \
+    .with_sports(['hockey', 'volleyball', 'swimming', 'baseball']) \
+    .with_generation_mode('llm') \
+    .with_llm_provider('together') \
+    .save('config.json')
+```
+
+See [CONFIG_GUIDE.md](CONFIG_GUIDE.md) for complete documentation.
 
 ### Step 2: Run the Orchestrator
 
@@ -327,6 +357,90 @@ Agent basketball: Complete
 ```
 
 The generated poems will be unique for each sport and each run!
+
+## Configuration Reference
+
+### Two Ways to Configure
+
+This project provides two complementary approaches for creating `config.json`:
+
+| Approach | Best For | Testable | Repeatable | Documentation |
+|----------|----------|----------|------------|---------------|
+| **Claude Skill** | Interactive use, demos, first-time users | Integration tests | Conversational | [config_manager skill](.claude/skills/config_manager.md) |
+| **Python API** | Scripts, CI/CD, automation, testing | ✅ Unit tests | ✅ Deterministic | [CONFIG_GUIDE.md](CONFIG_GUIDE.md) |
+
+### Configuration Parameters
+
+All configs require these parameters:
+
+```json
+{
+  "sports": ["basketball", "soccer", "tennis"],        // 3-5 sport names
+  "generation_mode": "template",                       // "template" or "llm"
+  "llm_provider": "together",                          // Only for LLM mode
+  "llm_model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",  // Only for LLM mode
+  "retry_enabled": true,                               // Retry failed agents
+  "session_id": "session_20251101_183500",            // Auto-generated
+  "timestamp": "2025-11-01T18:35:00Z"                 // Auto-generated
+}
+```
+
+### Python API Examples
+
+**Quick template config:**
+```python
+from config_builder import ConfigBuilder
+
+ConfigBuilder().with_sports(['basketball', 'soccer', 'tennis']).save('config.json')
+```
+
+**Full LLM config:**
+```python
+from config_builder import ConfigBuilder
+
+ConfigBuilder() \
+    .with_sports(['hockey', 'volleyball', 'swimming', 'baseball']) \
+    .with_generation_mode('llm') \
+    .with_llm_provider('together') \
+    .with_retry(True) \
+    .save('config.json')
+```
+
+**Load and modify existing config:**
+```python
+from config_builder import ConfigBuilder
+
+builder = ConfigBuilder.load('config.json')
+builder.with_generation_mode('llm').save('config.json')
+```
+
+**Validation:**
+```python
+from config_builder import ConfigBuilder, ConfigValidationError
+
+try:
+    builder = ConfigBuilder()
+    builder.with_sports(['basketball', 'soccer'])  # Too few!
+    builder.save('config.json')
+except ConfigValidationError as e:
+    print(f"Error: {e}")
+    # Output: "Must specify at least 3 sports (got 2)"
+```
+
+See [CONFIG_GUIDE.md](CONFIG_GUIDE.md) for complete examples and troubleshooting.
+
+### Running Tests
+
+```bash
+# Test the Python API
+pytest tests/test_config_builder.py -v
+
+# Run with coverage
+pytest tests/test_config_builder.py --cov=config_builder
+
+# All tests
+pytest -v
+```
 
 ## Customization
 

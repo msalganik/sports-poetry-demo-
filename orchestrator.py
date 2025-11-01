@@ -430,8 +430,19 @@ class SportsPoetryOrchestrator:
             # Phase 1.5: Create session directory
             self.session_dir = self.create_session_directory(config)
 
+            # Move early logs from root to session directory
+            root_log = Path("execution_log.jsonl")
+            session_log = self.session_dir / "execution_log.jsonl"
+            if root_log.exists():
+                # Copy early logs to session directory
+                with open(root_log, "r") as src:
+                    with open(session_log, "a") as dst:
+                        dst.write(src.read())
+                # Remove root log file
+                root_log.unlink()
+
             # Update logger to write to session directory
-            self.logger.set_log_file(str(self.session_dir / "execution_log.jsonl"))
+            self.logger.set_log_file(str(session_log))
 
             # Phase 2: Launch all poetry agents in parallel
             agent_results = self.launch_all_agents(sports)

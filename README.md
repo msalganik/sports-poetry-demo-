@@ -107,12 +107,12 @@ cat output/analysis_report.md
 
 **Detailed provenance** (every action):
 ```bash
-cat execution_log.jsonl | jq .
+cat output/latest/execution_log.jsonl | jq .
 ```
 
 **Usage analytics** (aggregate stats):
 ```bash
-cat usage_log.jsonl | jq .
+cat output/latest/usage_log.jsonl | jq .
 ```
 
 ## Architecture
@@ -132,9 +132,10 @@ Agent 1   Agent 2  Agent 3  Agent N  (parallel)
          ▼
    Analyzer Agent
          ↓
-  analysis_report.md
-  execution_log.jsonl
-  usage_log.jsonl
+  output/{session_id}/
+    analysis_report.md
+    execution_log.jsonl
+    usage_log.jsonl
 ```
 
 ## Files
@@ -148,14 +149,15 @@ Agent 1   Agent 2  Agent 3  Agent N  (parallel)
 - `analyzer_agent.py` - Synthesizes results
 
 ### Output
-- `output/{sport}/haiku.txt` - Generated haikus
-- `output/{sport}/sonnet.txt` - Generated sonnets
-- `output/{sport}/metadata.json` - Poem metadata
-- `output/analysis_report.md` - Final analysis
+- `output/{session_id}/{sport}/haiku.txt` - Generated haikus
+- `output/{session_id}/{sport}/sonnet.txt` - Generated sonnets
+- `output/{session_id}/{sport}/metadata.json` - Poem metadata
+- `output/{session_id}/analysis_report.md` - Final analysis
+- `output/latest` - Symlink to most recent session
 
-### Logs
-- `execution_log.jsonl` - Detailed provenance (every action)
-- `usage_log.jsonl` - Aggregate analytics (per run)
+### Logs (per session)
+- `output/{session_id}/execution_log.jsonl` - Detailed provenance (every action)
+- `output/{session_id}/usage_log.jsonl` - Aggregate analytics (per run)
 
 ## Log Examples
 
@@ -376,31 +378,31 @@ LLM mode (creative, unique):
 
 Find all failures:
 ```bash
-cat execution_log.jsonl | jq 'select(.action == "failed")'
+cat output/latest/execution_log.jsonl | jq 'select(.action == "failed")'
 ```
 
 Average agent duration:
 ```bash
-cat usage_log.jsonl | jq '.agent_results[].duration_s' | jq -s 'add/length'
+cat output/latest/usage_log.jsonl | jq '.agent_results[].duration_s' | jq -s 'add/length'
 ```
 
-Most popular sports:
+Most popular sports across all runs:
 ```bash
-cat usage_log.jsonl | jq -r '.sports[]' | sort | uniq -c | sort -rn
+cat output/*/usage_log.jsonl | jq -r '.sports[]' | sort | uniq -c | sort -rn
 ```
 
 ### Run Multiple Times
 
-The logs append, so you can run multiple times and analyze trends:
+Each run creates a separate session directory, so you can run multiple times and analyze trends:
 
 ```bash
-# Run 5 times with different sports
+# Run 3 times with different sports
 python3 orchestrator.py
 python3 orchestrator.py
 python3 orchestrator.py
 
-# Analyze trends
-cat usage_log.jsonl | jq -s '.[].total_duration_s' | jq -s 'add/length'
+# Analyze trends across all sessions
+cat output/*/usage_log.jsonl | jq -s '.[].total_duration_s' | jq -s 'add/length'
 ```
 
 ## Troubleshooting
@@ -412,7 +414,7 @@ cat usage_log.jsonl | jq -s '.[].total_duration_s' | jq -s 'add/length'
 - **Solution**: Increase timeout in `orchestrator.py` line 87
 
 **Problem**: No poems generated
-- **Solution**: Check `execution_log.jsonl` for error details
+- **Solution**: Check `output/latest/execution_log.jsonl` for error details
 
 **Problem**: Analysis report is empty
 - **Solution**: Ensure `output/*/` directories have haiku.txt and sonnet.txt

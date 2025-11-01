@@ -1,0 +1,10 @@
+{
+  "sports": [
+    "soccer",
+    "field hockey",
+    "ice hockey"
+  ],
+  "timestamp": "2025-11-01T13:05:00Z",
+  "session_id": "demo_001",
+  "retry_enabled": true
+}

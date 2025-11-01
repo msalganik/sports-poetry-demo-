@@ -223,7 +223,7 @@ class TestOrchestratorIntegration:
 
     @pytest.mark.integration
     def test_logging_creates_files(self, tmp_path):
-        """Test that execution logs are created."""
+        """Test that execution logs are created in session directory."""
         config = {
             "sports": ["basketball"],
             "timestamp": "2025-11-01T18:00:00Z",
@@ -236,13 +236,6 @@ class TestOrchestratorIntegration:
         with open(config_file, "w") as f:
             json.dump(config, f)
 
-        # Count log entries before
-        log_file = Path(__file__).parent.parent / "execution_log.jsonl"
-        entries_before = 0
-        if log_file.exists():
-            with open(log_file) as f:
-                entries_before = len(f.readlines())
-
         # Run orchestrator
         result = subprocess.run(
             [sys.executable, "orchestrator.py"],
@@ -254,15 +247,19 @@ class TestOrchestratorIntegration:
 
         assert result.returncode == 0
 
-        # Check logs were written
+        # Check logs were written to session directory
+        session_dir = Path(__file__).parent.parent / "output" / "test_logging"
+        log_file = session_dir / "execution_log.jsonl"
+        assert log_file.exists(), f"Execution log not found at {log_file}"
+
+        # Verify log has entries
         with open(log_file) as f:
-            entries_after = len(f.readlines())
+            entries = f.readlines()
+        assert len(entries) > 0, "No log entries written"
 
-        assert entries_after > entries_before, "No log entries written"
-
-        # Check usage log
-        usage_log = Path(__file__).parent.parent / "usage_log.jsonl"
-        assert usage_log.exists()
+        # Check usage log in session directory
+        usage_log = session_dir / "usage_log.jsonl"
+        assert usage_log.exists(), f"Usage log not found at {usage_log}"
 
 
 class TestErrorHandling:

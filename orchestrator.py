@@ -26,6 +26,11 @@ class ProvenanceLogger:
         self.log_file = log_file
         self.lock = threading.Lock()
 
+    def set_log_file(self, log_file: str):
+        """Update the log file path (e.g., after session directory is created)."""
+        with self.lock:
+            self.log_file = log_file
+
     def log_event(self, actor: str, action: str, details: Dict[str, Any] = None, message: str = None):
         """Log a single event with timestamp and full context."""
         entry = {
@@ -395,7 +400,8 @@ class SportsPoetryOrchestrator:
             "retry_count": retry_count
         }
 
-        with open("usage_log.jsonl", "a") as f:
+        usage_log_path = self.session_dir / "usage_log.jsonl"
+        with open(usage_log_path, "a") as f:
             f.write(json.dumps(usage_entry) + "\n")
 
         self.logger.log_event(
@@ -423,6 +429,9 @@ class SportsPoetryOrchestrator:
 
             # Phase 1.5: Create session directory
             self.session_dir = self.create_session_directory(config)
+
+            # Update logger to write to session directory
+            self.logger.set_log_file(str(self.session_dir / "execution_log.jsonl"))
 
             # Phase 2: Launch all poetry agents in parallel
             agent_results = self.launch_all_agents(sports)

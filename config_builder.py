@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-import uuid
 
 
 class ConfigValidationError(Exception):
@@ -232,20 +231,19 @@ class ConfigBuilder:
 
         return self.validate()
 
-    def save(self, path: str = "config.json", reason: str = None, user: str = "unknown") -> Path:
+    def save(self, path: str = "config.json", reason: Optional[str] = None, user: str = "unknown") -> Path:
         """
         Build, validate, and save the configuration to a file with changelog.
 
         Args:
             path: Path to save the config file
-            reason: Explanation of what changed and why (required)
+            reason: Explanation of what changed and why (default: "Configuration saved")
             user: Who made the change (e.g., "claude_code", "cli", "api")
 
         Returns:
             Path object of the saved file
 
         Raises:
-            ValueError: If reason is not provided
             ConfigValidationError: If validation fails
         """
         return self.save_with_changelog(config_path=path, reason=reason, user=user)
@@ -305,14 +303,14 @@ class ConfigBuilder:
 
     def save_with_changelog(self,
                            config_path: str = "config.json",
-                           reason: str = None,
+                           reason: Optional[str] = None,
                            user: str = "unknown") -> Path:
         """
         Save config and write changelog to session directory.
 
         Args:
             config_path: Where to save config (default: config.json)
-            reason: Required explanation of what changed and why
+            reason: Explanation of what changed and why (default: "Configuration saved")
             user: Who made the change (e.g., "claude_code", "cli", "api")
 
         Returns:
@@ -324,11 +322,10 @@ class ConfigBuilder:
             - Writes output/{session_id}/config.changelog.json
 
         Raises:
-            ValueError: If reason is not provided
             ConfigValidationError: If validation fails
         """
         if reason is None:
-            raise ValueError("Reason is required for changelog tracking")
+            reason = "Configuration saved"
 
         # Build and validate new config
         new_config = self.build()
@@ -426,9 +423,13 @@ def create_config_interactive() -> ConfigBuilder:
     mode_choice = input("> ").strip()
     mode = "llm" if mode_choice == "2" else "template"
 
-    # Build config
-    builder = ConfigBuilder()
-    builder.with_sports(sports).with_generation_mode(mode)
+    # Build config starting from defaults
+    builder = ConfigBuilder.load_default()
+    builder.with_sports(sports)
+
+    # Only set generation_mode if different from default (template)
+    if mode != "template":
+        builder.with_generation_mode(mode)
 
     if mode == "llm":
         print("\nLLM Provider:")
@@ -436,7 +437,9 @@ def create_config_interactive() -> ConfigBuilder:
         print("  2. huggingface")
         provider_choice = input("> ").strip()
         provider = "huggingface" if provider_choice == "2" else "together"
-        builder.with_llm_provider(provider)
+        # Only set if different from default (together)
+        if provider != "together":
+            builder.with_llm_provider(provider)
 
     return builder
 

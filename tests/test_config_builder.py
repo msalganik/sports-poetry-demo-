@@ -464,7 +464,7 @@ class TestConfigBuilder:
         assert len(changelog["changed_from_default"]) == 3
 
     def test_save_with_changelog_no_reason(self, tmp_path, monkeypatch):
-        """Test that save_with_changelog requires a reason."""
+        """Test that save_with_changelog provides default reason when None."""
         monkeypatch.chdir(tmp_path)
         # Create default config
         default_config = {
@@ -483,8 +483,17 @@ class TestConfigBuilder:
         builder = ConfigBuilder.load_default(str(default_path))
         config_path = tmp_path / "config.json"
 
-        with pytest.raises(ValueError, match="Reason is required"):
-            builder.save_with_changelog(str(config_path), reason=None, user="test")
+        # Should not raise error, should use default reason
+        builder.save_with_changelog(str(config_path), reason=None, user="test")
+
+        # Verify changelog was created with default reason
+        session_id = builder.config["session_id"]
+        changelog_path = tmp_path / "output" / session_id / "config.changelog.json"
+
+        with open(changelog_path) as f:
+            changelog = json.load(f)
+
+        assert changelog["reason"] == "Configuration saved"
 
     def test_changelog_excludes_auto_fields(self, tmp_path, monkeypatch):
         """Test that session_id and timestamp are not tracked in changes."""

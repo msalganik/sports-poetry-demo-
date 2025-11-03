@@ -697,9 +697,9 @@ class TestConfigBuilderIntegration:
             json.dump(default_config, f)
 
         config_path = tmp_path / "config.json"
-        builder = ConfigBuilder()
-        builder.with_sports(["basketball", "soccer", "tennis"])
-        builder.with_generation_mode("template")
+        # Use load_default() pattern (matches documentation)
+        builder = ConfigBuilder.load_default(str(default_path))
+        # Using default sports, so no changes needed
         path = builder.save(str(config_path), reason="Test template mode workflow", user="test")
 
         # Verify file contents
@@ -729,11 +729,11 @@ class TestConfigBuilderIntegration:
             json.dump(default_config, f)
 
         config_path = tmp_path / "config.json"
-        builder = ConfigBuilder()
+        # Use load_default() pattern (matches documentation)
+        builder = ConfigBuilder.load_default(str(default_path))
         builder.with_sports(["hockey", "volleyball", "swimming", "baseball"])
         builder.with_generation_mode("llm")
-        builder.with_llm_provider("together")
-        builder.with_llm_model("meta-llama/Llama-3.3-70B-Instruct-Turbo-Free")
+        # llm_provider and llm_model already match defaults, no need to set
         path = builder.save(str(config_path), reason="Test LLM mode workflow", user="test")
 
         # Verify file contents
@@ -764,9 +764,9 @@ class TestConfigBuilderIntegration:
 
         config_path = tmp_path / "config.json"
 
-        # Create initial config
-        builder1 = ConfigBuilder()
-        builder1.with_sports(["basketball", "soccer", "tennis"])
+        # Create initial config using load_default() pattern
+        builder1 = ConfigBuilder.load_default(str(default_path))
+        # Using default sports, no changes needed
         builder1.save(str(config_path), reason="Initial config", user="test")
 
         # Load and modify

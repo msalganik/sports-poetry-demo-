@@ -33,3 +33,4 @@ htmlcov/
 
 # Config may contain session-specific data
 # config.json
+.claude/claude.local.md

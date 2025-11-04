@@ -12,6 +12,7 @@ import sys
 import os
 import subprocess
 import uuid
+import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Any
@@ -543,6 +544,25 @@ class SportsPoetryOrchestrator:
 
 
 if __name__ == "__main__":
-    orchestrator = SportsPoetryOrchestrator()
+    parser = argparse.ArgumentParser(
+        description="Sports Poetry Multi-Agent Orchestrator",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python3 orchestrator.py
+  python3 orchestrator.py --config config.json
+  python3 orchestrator.py --config output/configs/config_20251103_184500.json
+        """
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config.json",
+        help="Path to configuration file (default: config.json)"
+    )
+
+    args = parser.parse_args()
+
+    orchestrator = SportsPoetryOrchestrator(config_path=args.config)
     exit_code = orchestrator.run()
     sys.exit(exit_code)

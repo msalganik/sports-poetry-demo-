@@ -4,11 +4,11 @@ Create and manage configuration files for sports poetry generation with complete
 
 ## Description
 
-This skill provides an interactive interface for creating `config.json` files for the sports poetry multi-agent workflow. It collects all required configuration parameters through natural language conversation and uses the `config_builder.py` Python API to validate and generate the configuration file.
+This skill provides an interactive interface for creating configuration files for the sports poetry multi-agent workflow. It collects all required configuration parameters through natural language conversation and uses the `config_builder.py` Python API to validate and generate timestamped configuration files in the `output/configs/` directory.
 
 ## When to Use This Skill
 
-- User wants to create a new `config.json` file
+- User wants to create a new configuration file
 - User asks to "set up configuration" or "configure the demo"
 - User provides sports and generation preferences
 - User needs help understanding configuration options
@@ -276,7 +276,7 @@ Default: yes
 🆔 Session ID:      {session_id} (auto-generated)
 ⏰ Timestamp:       {timestamp} (auto-generated)
 
-📁 Output file:     config.json
+📁 Output file:     output/configs/config_{timestamp}.json
 {if mode=llm:}
 ⏱️  Estimated time:  ~{count * 4} seconds ({count} sports × ~4s each)
 💰 API cost:        Free (using free tier model)
@@ -288,7 +288,7 @@ Proceed with this configuration? [yes/no/edit]
 ```
 
 **Actions:**
-- `yes`: Create config.json
+- `yes`: Create configuration file
 - `no`: Cancel
 - `edit`: Ask which parameter to change and restart from that step
 
@@ -297,6 +297,8 @@ Proceed with this configuration? [yes/no/edit]
 **Using config_builder.py:**
 ```python
 from config_builder import ConfigBuilder, ConfigValidationError
+from pathlib import Path
+from datetime import datetime
 
 try:
     # Always start from default config
@@ -317,22 +319,22 @@ try:
     if not retry_enabled:  # Only change if different from default (true)
         builder.with_retry(retry_enabled)
 
-    # Save with changelog tracking
-    # Provide a clear reason explaining what the user changed
-    reason = f"User specified sports: {', '.join(sports_list)}"
-    if mode == "llm":
-        reason += " with LLM mode enabled"
+    # Create output/configs directory if it doesn't exist
+    configs_dir = Path("output/configs")
+    configs_dir.mkdir(parents=True, exist_ok=True)
 
-    config_path = builder.save("config.json", reason=reason, user="claude_code")
+    # Generate timestamped filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    config_filename = f"config_{timestamp}.json"
+    config_path = configs_dir / config_filename
 
-    # Show changelog location
-    session_id = builder.config['session_id']
+    # Save configuration to output/configs directory
+    builder.save(str(config_path))
+
     print(f"✓ Successfully created {config_path}")
-    print(f"✓ Session ID: {session_id}")
-    print(f"✓ Changelog: output/{session_id}/config.changelog.json")
-    print(f"\nNext step: Run the orchestrator")
+    print(f"\nNext step: Run the orchestrator with this config")
     print(f"  cd sports_poetry_demo")
-    print(f"  python3 orchestrator.py")
+    print(f"  python3 orchestrator.py --config {config_path}")
 
 except FileNotFoundError as e:
     print(f"❌ Error: {e}")
@@ -363,13 +365,9 @@ Skill: Great! I'll create a configuration starting from defaults:
 
 User: "yes"
 
-Skill: ✓ Created config.json
-       ✓ Session ID: session_20251101_184500
-       ✓ Changelog: output/session_20251101_184500/config.changelog.json
+Skill: ✓ Created output/configs/config_20251101_184500.json
 
-       No changes from default configuration.
-
-       Next step: python3 orchestrator.py
+       Next step: python3 orchestrator.py --config output/configs/config_20251101_184500.json
 ```
 
 ### Example 2: LLM Mode (Full Flow)
@@ -423,8 +421,7 @@ Skill: **Summary**
 
 User: "yes"
 
-Skill: ✓ Created config.json
-       ✓ Session ID: session_20251101_184500
+Skill: ✓ Created output/configs/config_20251101_184500.json
 ```
 
 ### Example 3: Error Recovery
@@ -484,7 +481,7 @@ Skill: Switching to template mode...
 
 User: "yes"
 
-Skill: ✓ Created config.json with template mode
+Skill: ✓ Created output/configs/config_20251101_184500.json with template mode
 ```
 
 ## Error Handling
@@ -548,16 +545,15 @@ Skill: ✓ Created config.json with template mode
 
 **Permission denied:**
 ```
-❌ Error: Cannot write to config.json
+❌ Error: Cannot write to output/configs/
    Permission denied
-   Check file permissions or try a different location
+   Check directory permissions or try a different location
 ```
 
 **File exists:**
 ```
-⚠️  Warning: config.json already exists
-   Overwrite? [yes/no]
-   (Backup will be saved as config.json.backup)
+Note: Each config is saved with a unique timestamp, so conflicts are rare.
+If a config file already exists at the exact same second, a random suffix will be added.
 ```
 
 ## Sport Category Mappings
@@ -638,9 +634,9 @@ This skill requires:
 
 ## Notes
 
-- Session IDs are auto-generated using format: `session_YYYYMMDD_HHMMSS`
-- Timestamps use ISO 8601 format with UTC timezone
+- Config files are saved to `output/configs/config_{timestamp}.json`
+- Timestamp format: `YYYYMMDD_HHMMSS`
+- Each config gets a unique timestamped filename to prevent overwrites
 - API keys are validated but never displayed or logged
-- All config files are saved as `config.json` in current directory
-- Existing `config.json` will prompt for overwrite confirmation
+- The orchestrator must be run with `--config` flag pointing to the created file
 - All user inputs are normalized (lowercase, trimmed) for consistency

@@ -13,6 +13,7 @@ import os
 import subprocess
 import uuid
 import argparse
+import shutil
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Any
@@ -491,6 +492,16 @@ class SportsPoetryOrchestrator:
 
             # Phase 1.5: Create session directory
             self.session_dir = self.create_session_directory(config)
+
+            # Copy config file to session directory
+            config_dest = self.session_dir / "config.json"
+            shutil.copy(self.config_path, config_dest)
+            self.logger.log_event(
+                "orchestrator",
+                "config_copied",
+                details={"source": self.config_path, "destination": str(config_dest)},
+                message=f"Copied config to session directory"
+            )
 
             # Create changelog
             create_session_changelog(

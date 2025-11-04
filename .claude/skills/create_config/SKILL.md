@@ -202,60 +202,52 @@ import os
 api_key = os.environ.get("HUGGINGFACE_API_TOKEN")
 ```
 
-**Step 5b: If not in environment, check claude.local.md**
+**Step 5b: If not in environment, check .claude/claude.local.md**
 
-If API key not found in environment variables, check for claude.local.md:
+If API key not found in environment variables, check for project-level claude.local.md:
 
 ```python
 from pathlib import Path
 import re
 
-# Check common locations for claude.local.md
-search_paths = [
-    Path.cwd() / "claude.local.md",           # Current directory
-    Path.cwd().parent / "claude.local.md",    # Parent directory
-    Path.home() / "claude.local.md",          # Home directory
-]
+# Check project .claude directory for claude.local.md
+local_config_path = Path.cwd() / ".claude" / "claude.local.md"
 
 api_key_from_file = None
-file_location = None
 
-for path in search_paths:
-    if path.exists():
-        content = path.read_text()
-        # Look for API key patterns
-        if provider == "together":
-            match = re.search(r'TOGETHER_API_KEY["\s:=]+([a-zA-Z0-9_-]+)', content)
-        else:  # huggingface
-            match = re.search(r'HUGGINGFACE_API_TOKEN["\s:=]+([a-zA-Z0-9_-]+)', content)
+if local_config_path.exists():
+    content = local_config_path.read_text()
+    # Look for API key patterns
+    if provider == "together":
+        match = re.search(r'TOGETHER_API_KEY["\s:=]+([a-zA-Z0-9_-]+)', content)
+    else:  # huggingface
+        match = re.search(r'HUGGINGFACE_API_TOKEN["\s:=]+([a-zA-Z0-9_-]+)', content)
 
-        if match:
-            api_key_from_file = match.group(1)
-            file_location = str(path)
-            break
+    if match:
+        api_key_from_file = match.group(1)
 ```
 
-**If API key found in claude.local.md:**
+**If API key found in .claude/claude.local.md:**
 ```
-✓ API key found in {file_location}
+✓ API key found in .claude/claude.local.md
   Provider: {provider}
   Key length: {len(api_key)} characters
 
-Note: The API key is stored in claude.local.md but not set as an environment variable.
+Note: The API key is stored in .claude/claude.local.md but not set as an environment variable.
 The orchestrator will need to read it from this file or you can set it in your environment:
   export {PROVIDER_UPPERCASE}_API_KEY="{api_key_from_file}"
 
 Continue with LLM mode? [yes/no]
 ```
 
-**If API key NOT found in environment or claude.local.md:**
+**If API key NOT found in environment or .claude/claude.local.md:**
 ```
 ⚠️  **API Key Required**
 
 To use LLM mode with {provider}, you need to set an API key.
 
 {provider_uppercase}_API_KEY environment variable not found.
-Also checked claude.local.md in: current dir, parent dir, home dir
+Also checked .claude/claude.local.md
 
 **Setup Instructions:**
 
@@ -265,7 +257,7 @@ For Together.ai:
   3. Set in terminal:
      export TOGETHER_API_KEY="your-key-here"
 
-  Or add to claude.local.md:
+  Or add to .claude/claude.local.md:
      TOGETHER_API_KEY: your-key-here
 
 For HuggingFace:
@@ -274,7 +266,7 @@ For HuggingFace:
   3. Set in terminal:
      export HUGGINGFACE_API_TOKEN="your-token-here"
 
-  Or add to claude.local.md:
+  Or add to .claude/claude.local.md:
      HUGGINGFACE_API_TOKEN: your-token-here
 
 **What would you like to do?**

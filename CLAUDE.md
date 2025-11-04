@@ -184,12 +184,30 @@ Each session directory contains everything needed to understand/reproduce the ru
 - `execution_log.jsonl` - Complete audit trail
 - `{sport}/` - Generated poems and metadata
 
+### Storing API Keys
+
+API keys and secrets should be stored in `.claude/claude.local.md` (gitignored):
+
+```markdown
+# .claude/claude.local.md
+
+TOGETHER_API_KEY: your-together-api-key-here
+HUGGINGFACE_API_TOKEN: your-huggingface-token-here
+```
+
+The `create_config` skill automatically checks this file when setting up LLM mode.
+
+**Alternative**: Set as environment variable:
+```bash
+export TOGETHER_API_KEY="your-key-here"
+```
+
 ### Enabling LLM Mode
 
 For real LLM-generated poetry:
-1. Check if `TOGETHER_API_KEY` is set: `echo $TOGETHER_API_KEY`
-2. If not set, guide user to get free API key from https://www.together.ai/
-3. Update config.json with `"generation_mode": "llm"`
+1. Add API key to `.claude/claude.local.md` or set `TOGETHER_API_KEY` environment variable
+2. Get free API key from https://www.together.ai/ if needed
+3. Use the `create_config` skill with LLM mode, or manually create config with `"generation_mode": "llm"`
 4. Ensure requirements.txt is installed: `pip install -r requirements.txt`
 
 ### Analyzing Logs

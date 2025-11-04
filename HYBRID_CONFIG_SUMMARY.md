@@ -2,7 +2,7 @@
 
 ## What We Built
 
-A **hybrid configuration generation system** that provides both programmatic and conversational interfaces for creating `config.json` files.
+A **hybrid configuration generation system** that provides both programmatic and conversational interfaces for creating timestamped configuration files.
 
 ## Architecture
 
@@ -29,9 +29,10 @@ A **hybrid configuration generation system** that provides both programmatic and
               └───────────────────────┘
                           │
                           ↓
-              ┌───────────────────────┐
-              │   config.json         │
-              └───────────────────────┘
+              ┌───────────────────────────────────┐
+              │ output/configs/                   │
+              │   config_TIMESTAMP.json           │
+              └───────────────────────────────────┘
 ```
 
 ## Components Created
@@ -56,11 +57,13 @@ A **hybrid configuration generation system** that provides both programmatic and
 **Usage**:
 ```python
 from config_builder import ConfigBuilder
+from datetime import datetime
 
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 ConfigBuilder() \
     .with_sports(['basketball', 'soccer', 'tennis']) \
     .with_generation_mode('llm') \
-    .save('config.json')
+    .save(f'output/configs/config_{timestamp}.json')
 ```
 
 ### 2. Unit Tests (`tests/test_config_builder.py`)
@@ -214,13 +217,17 @@ python3 config_builder.py interactive
 # Or programmatically
 python3 -c "
 from config_builder import ConfigBuilder
+from datetime import datetime
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+config_path = f'output/configs/config_{timestamp}.json'
 ConfigBuilder() \
     .with_sports(['basketball', 'soccer', 'tennis']) \
-    .save('config.json')
+    .save(config_path)
+print(config_path)
 "
 
-# Run orchestrator
-python3 orchestrator.py
+# Run orchestrator with the created config
+python3 orchestrator.py --config output/configs/config_TIMESTAMP.json
 
 # Result: ✓ All 3 agents succeeded
 ```
@@ -232,15 +239,18 @@ python3 orchestrator.py
 ```python
 #!/usr/bin/env python3
 from config_builder import ConfigBuilder
+from datetime import datetime
+import subprocess
 
 # Create template mode config
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+config_path = f'output/configs/config_{timestamp}.json'
 ConfigBuilder() \
     .with_sports(['basketball', 'soccer', 'tennis']) \
-    .save('config.json')
+    .save(config_path)
 
-# Run orchestrator
-import subprocess
-subprocess.run(['python3', 'orchestrator.py'])
+# Run orchestrator with the config
+subprocess.run(['python3', 'orchestrator.py', '--config', config_path])
 ```
 
 ### Example 2: Interactive with Claude
@@ -259,7 +269,7 @@ Claude: **Generation Mode**
 You: "llm"
 
 Claude: [Asks for LLM provider, model, checks API key]
-        ✓ Created config.json
+        ✓ Created output/configs/config_20251103_184500.json
 ```
 
 ### Example 3: Batch Processing
@@ -267,6 +277,7 @@ Claude: [Asks for LLM provider, model, checks API key]
 ```python
 #!/usr/bin/env python3
 from config_builder import ConfigBuilder
+from datetime import datetime
 import subprocess
 
 sport_sets = [
@@ -275,14 +286,16 @@ sport_sets = [
     ['baseball', 'football', 'golf', 'rugby', 'cricket']
 ]
 
-for sports in sport_sets:
-    # Create config
+for i, sports in enumerate(sport_sets):
+    # Create timestamped config
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    config_path = f'output/configs/config_{timestamp}_{i}.json'
     ConfigBuilder() \
         .with_sports(sports) \
-        .save('config.json')
+        .save(config_path)
 
-    # Run orchestrator
-    subprocess.run(['python3', 'orchestrator.py'])
+    # Run orchestrator with specific config
+    subprocess.run(['python3', 'orchestrator.py', '--config', config_path])
 
     print(f"✓ Completed {len(sports)} sports")
 ```

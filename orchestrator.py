@@ -560,16 +560,16 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 orchestrator.py
-  python3 orchestrator.py --config config.json
   python3 orchestrator.py --config output/configs/config_20251103_184500.json
+  python3 orchestrator.py --config config.json
+  python3 orchestrator.py  # Uses config.json if it exists
         """
     )
     parser.add_argument(
         "--config",
         type=str,
         default="config.json",
-        help="Path to configuration file (default: config.json)"
+        help="Path to configuration file. Use timestamped configs from output/configs/ when created by skill (default: config.json)"
     )
 
     args = parser.parse_args()

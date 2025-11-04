@@ -2,6 +2,8 @@
 
 This guide explains the two ways to create configuration files for the sports poetry demo.
 
+**Note**: The examples below use `config.json` for simplicity, but the **recommended pattern** is to save configs with timestamps in `output/configs/config_TIMESTAMP.json` for better organization and auditability. See the [timestamped config pattern](#recommended-pattern) section below.
+
 ## Quick Comparison
 
 | Method | Best For | Testable | Repeatable | UX |
@@ -421,13 +423,43 @@ except ConfigValidationError as e:
 ### 5. Version Control Your Configs
 
 ```bash
-# Save to version control
-git add config.json
+# Save timestamped configs (recommended)
+git add output/configs/config_20251103_184500.json
 
 # Or use descriptive names
 config_llm_mode.json
 config_template_mode.json
 ```
+
+## Recommended Pattern
+
+For better organization and auditability, use timestamped configs in the `output/configs/` directory:
+
+```python
+from config_builder import ConfigBuilder
+from datetime import datetime
+
+# Generate timestamp
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+config_path = f"output/configs/config_{timestamp}.json"
+
+# Create config
+ConfigBuilder() \
+    .with_sports(['basketball', 'soccer', 'tennis']) \
+    .with_generation_mode('template') \
+    .save(config_path)
+
+# Run orchestrator with specific config
+import subprocess
+subprocess.run(['python3', 'orchestrator.py', '--config', config_path])
+```
+
+**Benefits**:
+- Each run has a unique, timestamped config
+- Easy to track which config was used for which session
+- No risk of overwriting previous configs
+- Better audit trail
+- Session directories in `output/{session_id}/` also contain a copy of the config
 
 ## See Also
 
